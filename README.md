@@ -220,6 +220,27 @@ What it validates on push and pull request:
 
 Branch protection recommendations are documented in `.github/BRANCH_PROTECTION.md`.
 
+## Deploy to Render
+
+This repository includes a Render blueprint at `render.yaml` for:
+
+- Managed PostgreSQL (`autotest-postgres`)
+- Backend web service (`autotest-backend`) from `backend/Dockerfile`
+- Frontend web service (`autotest-frontend`) from `frontend/Dockerfile`
+
+Steps:
+
+1. In Render, choose **New +** -> **Blueprint**.
+2. Connect this GitHub repo.
+3. Render will detect `render.yaml` and create all services.
+4. After first deploy, open the frontend URL.
+
+Important:
+
+- The frontend reads `API_BASE` from environment at container startup.
+- If your backend URL differs from `https://autotest-backend.onrender.com`, update the frontend service `API_BASE` env var in Render to:
+  `https://<your-backend-service>.onrender.com/api`
+
 ## Data flow summary
 
 1. Seed requirements/scenarios/test cases at startup.

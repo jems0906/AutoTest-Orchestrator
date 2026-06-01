@@ -1,0 +1,35 @@
+databases:
+  - name: autotest-postgres
+    databaseName: autotest
+    user: autotest
+    plan: free
+
+services:
+  - type: web
+    name: autotest-backend
+    env: docker
+    dockerContext: ./backend
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: autotest-postgres
+          property: connectionString
+      - key: API_PREFIX
+        value: /api
+      - key: SCHEDULER_TIMEZONE
+        value: UTC
+      - key: REPORT_DIR
+        value: reports
+      - key: AUTH_ENABLED
+        value: "false"
+
+  - type: web
+    name: autotest-frontend
+    env: docker
+    dockerContext: ./frontend
+    autoDeploy: true
+    envVars:
+      - key: API_BASE
+        value: https://autotest-backend.onrender.com/api
