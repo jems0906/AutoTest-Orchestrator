@@ -50,6 +50,8 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: Run RBAC authorization tests
+        env:
+          DATABASE_URL: sqlite:///./autotest_rbac_ci.db
         run: |
           cd backend
           python -m pytest -q tests/test_auth_rbac.py
