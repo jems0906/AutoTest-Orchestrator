@@ -225,7 +225,7 @@ jobs:
           set -euo pipefail
           backend_ready=0
           for i in {1..60}; do
-            if curl --fail --silent http://127.0.0.1:8000/health > /tmp/health.json; then
+            if curl --fail --silent --retry 3 --retry-connrefused --retry-delay 1 http://127.0.0.1:8000/health > /tmp/health.json; then
               backend_ready=1
               break
             fi
@@ -240,7 +240,7 @@ jobs:
 
           frontend_ready=0
           for i in {1..60}; do
-            if curl --fail --silent http://127.0.0.1:5173/ > /tmp/frontend.html; then
+            if curl --fail --silent --retry 3 --retry-connrefused --retry-delay 1 http://127.0.0.1:5173/ > /tmp/frontend.html; then
               frontend_ready=1
               break
             fi
@@ -253,9 +253,8 @@ jobs:
             exit 1
           fi
 
-          curl --fail --silent http://127.0.0.1:8000/health > /tmp/health.json
-          curl --fail --silent http://127.0.0.1:8000/api/dashboard > /tmp/dashboard.json
-          curl --fail --silent http://127.0.0.1:5173/ > /tmp/frontend.html
+          curl --fail --silent --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:8000/health > /tmp/health.json
+          curl --fail --silent --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:8000/api/dashboard > /tmp/dashboard.json
 
           grep -q '"status"' /tmp/health.json
           grep -q '"requirement_coverage"' /tmp/dashboard.json
