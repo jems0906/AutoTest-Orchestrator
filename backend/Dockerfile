@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN addgroup --system app && adduser --system --ingroup app app
 
 COPY --chown=app:app app ./app
-COPY --chown=app:app reports ./reports
+RUN mkdir -p /app/reports && chown -R app:app /app/reports
 
 ENV PYTHONUNBUFFERED=1 \
 	PYTHONDONTWRITEBYTECODE=1
