@@ -205,8 +205,22 @@ jobs:
           cd frontend
           python -m http.server 5173 &
           SERVER_PID=$!
-          sleep 2
-          curl --fail --silent http://127.0.0.1:5173/ > /dev/null
+          trap "kill $SERVER_PID" EXIT
+
+          ready=0
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5173/ > /dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$ready" -ne 1 ]; then
+            echo "Frontend static server did not become ready in time."
+            exit 1
+          fi
+
           kill $SERVER_PID
 
   container-compose-smoke:
