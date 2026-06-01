@@ -241,6 +241,14 @@ Important:
 - If your backend URL differs from `https://autotest-backend.onrender.com`, update the frontend service `API_BASE` env var in Render to:
   `https://<your-backend-service>.onrender.com/api`
 
+Post-deploy validation:
+
+- Run the **Render Smoke** GitHub Actions workflow (`.github/workflows/render-smoke.yml`) using **Run workflow**.
+- Provide:
+  - `backend_url` (for example `https://autotest-backend.onrender.com`)
+  - `frontend_url` (for example `https://autotest-frontend.onrender.com`)
+- The workflow verifies backend health, dashboard contract fields, and frontend HTML availability.
+
 ## Data flow summary
 
 1. Seed requirements/scenarios/test cases at startup.

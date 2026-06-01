@@ -1,0 +1,46 @@
+name: Render Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_url:
+        description: "Render backend base URL (e.g., https://autotest-backend.onrender.com)"
+        required: true
+        type: string
+      frontend_url:
+        description: "Render frontend base URL (e.g., https://autotest-frontend.onrender.com)"
+        required: true
+        type: string
+
+jobs:
+  render-smoke:
+    name: Render Smoke Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check backend health
+        run: |
+          BACKEND_URL="${{ inputs.backend_url }}"
+          for i in {1..30}; do
+            if curl --fail --silent "$BACKEND_URL/health" > /tmp/health.json; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl --fail --silent "$BACKEND_URL/health" > /tmp/health.json
+          grep -q '"status"' /tmp/health.json
+
+      - name: Check backend dashboard contract
+        run: |
+          BACKEND_URL="${{ inputs.backend_url }}"
+          curl --fail --silent "$BACKEND_URL/api/dashboard" > /tmp/dashboard.json
+          grep -q '"requirement_coverage"' /tmp/dashboard.json
+          grep -q '"regression_trends"' /tmp/dashboard.json
+
+      - name: Check frontend root
+        run: |
+          FRONTEND_URL="${{ inputs.frontend_url }}"
+          curl --fail --silent "$FRONTEND_URL/" > /tmp/frontend.html
+          grep -qi '<!doctype html>' /tmp/frontend.html
