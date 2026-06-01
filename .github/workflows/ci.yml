@@ -223,17 +223,32 @@ jobs:
       - name: Wait and verify service endpoints
         run: |
           set -euo pipefail
-          ready=0
+          backend_ready=0
           for i in {1..60}; do
             if curl --fail --silent http://127.0.0.1:8000/health > /tmp/health.json; then
-              ready=1
+              backend_ready=1
               break
             fi
             sleep 2
           done
 
-          if [ "$ready" -ne 1 ]; then
+          if [ "$backend_ready" -ne 1 ]; then
             echo "Backend did not become healthy within timeout."
+            docker compose ps
+            exit 1
+          fi
+
+          frontend_ready=0
+          for i in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:5173/ > /tmp/frontend.html; then
+              frontend_ready=1
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$frontend_ready" -ne 1 ]; then
+            echo "Frontend did not become ready within timeout."
             docker compose ps
             exit 1
           fi
