@@ -219,42 +219,39 @@ jobs:
       - name: Build and start full stack
         run: |
           docker compose up -d --build
+          docker compose ps
 
       - name: Wait and verify service endpoints
         run: |
           set -euo pipefail
-          backend_ready=0
-          for i in {1..60}; do
-            if curl --fail --silent --retry 3 --retry-connrefused --retry-delay 1 http://127.0.0.1:8000/health > /tmp/health.json; then
-              backend_ready=1
-              break
-            fi
-            sleep 2
-          done
+          wait_for_health() {
+            container_name="$1"
+            attempts="${2:-60}"
+            for i in $(seq 1 "$attempts"); do
+              status=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container_name" 2>/dev/null || true)
+              if [ "$status" = "healthy" ] || [ "$status" = "running" ]; then
+                return 0
+              fi
+              sleep 2
+            done
+            return 1
+          }
 
-          if [ "$backend_ready" -ne 1 ]; then
-            echo "Backend did not become healthy within timeout."
+          if ! wait_for_health "autotest-backend" 90; then
+            echo "Backend container did not reach healthy status within timeout."
             docker compose ps
             exit 1
           fi
 
-          frontend_ready=0
-          for i in {1..60}; do
-            if curl --fail --silent --retry 3 --retry-connrefused --retry-delay 1 http://127.0.0.1:5173/ > /tmp/frontend.html; then
-              frontend_ready=1
-              break
-            fi
-            sleep 2
-          done
-
-          if [ "$frontend_ready" -ne 1 ]; then
-            echo "Frontend did not become ready within timeout."
+          if ! wait_for_health "autotest-frontend" 90; then
+            echo "Frontend container did not reach healthy status within timeout."
             docker compose ps
             exit 1
           fi
 
           curl --fail --silent --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:8000/health > /tmp/health.json
           curl --fail --silent --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:8000/api/dashboard > /tmp/dashboard.json
+          curl --fail --silent --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:5173/ > /tmp/frontend.html
 
           grep -q '"status"' /tmp/health.json
           grep -q '"requirement_coverage"' /tmp/dashboard.json
